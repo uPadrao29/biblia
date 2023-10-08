@@ -1,0 +1,10 @@
+__pycache__
+templates/script.html
+venv
+bishops.sqlite
+duck.txt
+gethashpass.py
+query.sql
+output.txt
+raw.html
+test.py

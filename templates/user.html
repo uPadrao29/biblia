@@ -1,0 +1,18 @@
+{% extends "layout.html"%}
+
+
+{% block title %}
+	User 
+{% endblock %}
+
+
+{% block body %}
+	<h4>
+		Hello, {% if session.user_name %}{{ session.user_name }}{% else %}people{% endif %}, 
+		your ID is {% if session.user_id %}{{ session.user_id }}{% else %}Unknow{% endif %},
+		you are in {% if session.cache %}{{ session.cache }}{% else %}Unknow{% endif %} verse,
+
+	</h4>
+{% endblock %}
+
+

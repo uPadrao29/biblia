@@ -1,0 +1,42 @@
+{% extends "layout.html"%}
+
+
+{% block title %}
+	Index
+{% endblock %}
+
+
+
+{% block body %}
+	{% if session.user_id and lines and info %}
+		<span style="justify-content: center; font-family: Gill Sans; font-size: 25px;
+					 font-weight: 800; letter-spacing: .1rem; text-transform: uppercase;">
+			{% if info.chapter %}Chapter {{ info.chapter }}{% endif %} -
+			{% if info.book %}Book {{ info.book }}{% endif %}
+		</span>
+		<div class="container" id="verses-text" style="width: 1000px; height: 500px;
+									 padding-top: 20px; background-color:  #d1c6c4; 
+									 border-radius: 20px; text-align: justify; 
+									 margin-top: 15px; padding: 10px; 
+									 overflow-y: scroll;" autofocus>
+			<span style="font-family: Arial">
+				{% for line in lines %}
+					<p>{{ line.text }}</p>
+				{% endfor %}
+			</span>
+		</div>
+		<form action="/" method="POST" style="margin-top: 5px">
+			<input type="submit" class="btn btn-{% if not has_left %}danger{% else %}primary{% endif %}" name="back-max" value="◀◀" {% if not has_left %} disabled {% endif %}>
+			<input type="submit" class="btn btn-{% if not has_left %}danger{% else %}primary{% endif %}" name="back" value="◀" {% if not has_left %} disabled {% endif %}>
+			<input type="submit" class="btn btn-{% if not has_right %}danger{% else %}primary{% endif %}" name="next" value="▶" {% if not has_right %} disabled {% endif %}>
+			<input type="submit" class="btn btn-{% if not has_right %}danger{% else %}primary{% endif %}" name="next-max" value="▶▶" {% if not has_right %} disabled {% endif %}>
+			<input type="hidden" name="meta" value="{{ info.chapter }}-{{ info.book }}">
+		</form>
+	{% elif session.user_id %}
+		<h2>...</h2>
+	{% else %}
+		<h2> You aren't logged </h2>
+	{% endif %}
+{% endblock %}
+
+

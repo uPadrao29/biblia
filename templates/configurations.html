@@ -1,0 +1,38 @@
+{% extends "layout.html"%}
+
+
+{% block title %}
+	Configuration
+{% endblock %}
+
+
+{% block body %}
+	<div class="container">
+		<form class="form" action="/configurations" method="POST">
+			<div class="row">
+				<div clas="col-md">
+					<input type="text" placeholder="{{session.user_name}}" disabled> 
+					<p class="font-monospace" style="font-size: 18px;">OLD NAME</p>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-7">
+					<input type="text" id="new-username" placeholder="New username" alt="New username input">
+					<p class="font-monospace" style="font-size: 18px;">NEW USERNAME</p>
+				</div>
+				<div class="col-md-1">
+					<input type="password" id="old-password" placeholder="Old password" alt="Old password input">
+					<p class="font-monospace" style="font-size: 18px;">OLD PASSWORD</p>
+				</div>
+			</div>
+			<input type="password" id="new-password-1" placeholder="New password" alt="First new password input">
+			<p class="font-monospace" style="font-size: 18px;">NEW PASSWORD</p>
+			<input type="password" id="new-password-2" placeholder="Repeat new password" alt="Repeat new password">
+			<p class="font-monospace" style="font-size: 18px;">REPEAT NEW PASSWORD</p>
+			{% if msg %}
+				<p class="font-monospace" style="font-size: 18px; color: {% if color %}{{ color }}{% else %}black{% endif %};">REPEAT NEW PASSWORD</p>
+			{% endif %}
+			<input type="submit" value="Change">
+		</form>
+	</div>
+{% endblock %}

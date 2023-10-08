@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+
+
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>{% block title %}{% endblock %}</title>
+		<link rel="stylesheet" href="../static/css/bootstrap.css">
+	</head>
+	<body class="bg-secondary">
+		<nav class="navbar navbar-expand-lg navbar-light bg-light">
+		  <a class="navbar-brand" href="{% if session.user_id %}#verses-text{% else %}#{% endif %}" style="margin-left: 10px;">Biblia</a>
+		  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+		    <span class="navbar-toggler-icon"></span>
+		  </button>
+
+		  <div class="collapse navbar-collapse" id="navbarSupportedContent">
+		    <ul class="navbar-nav mr-auto">
+		      <li class="nav-item active">
+		        <a class="nav-link" href="/">Home</a>
+		      </li>
+		    </ul>
+		    {% if session.user_id %}
+				<li class="btn btn-primary" style="padding-bottom: 5px; margin-right: 5px;">
+					<a href="/user" style="color: white">User page</a>
+				</li>
+				<li class="btn btn-primary" style="padding-bottom: 5px; margin-right: 5px;">
+					<a href="/configurations" style="color: white">Configurations</a>
+				</li>
+		    	<li class="btn btn-primary">
+		    		<a href="/logout" style="color: white;"> Logout </a>
+		    	</li>
+			{% else %}
+				<li class="btn btn-primary" style="padding-bottom: 5px; margin-right: 5px;">
+					<a href="/login"  style="color: white;">Login</a>
+				</li>
+				<li class="btn btn-primary">
+					<a href="/register" style="color: white;">Register</a>
+				</li>
+			{% endif %}
+
+		  </div>
+		</nav>
+		<script src="../static/js/jquery-3.7.0.min.js"></script>
+		<script src="../static/js/popper.min.js"></script>
+		<script src="../static/js/bootstrap.min.js"></script>
+		<center>
+			{% block body %}{% endblock %}
+		</center>	 
+	</body>
+</html>
+

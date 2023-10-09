@@ -20,8 +20,8 @@
 									 margin-top: 15px; padding: 10px; 
 									 overflow-y: scroll;" autofocus>
 			<span style="font-family: Arial">
-				{% for line in lines %}
-					<p>{{ line.text }}</p>
+				{% for line in lines %}				
+					<p>Verse {{ line.index }} > {{ line.text }}</p>
 				{% endfor %}
 			</span>
 		</div>

@@ -1,0 +1,10 @@
+###Changelog v1.0.0###
+
+# 1 - Added verse index number to pages#
+# 2 - Small bugs fixed#
+
+
+##Future Updates##
+# 1 - Finalize the books limit with max_books variable#
+# 2 - Enhance the visual for users#
+# 3 - Added some features like change name, password, see another users#

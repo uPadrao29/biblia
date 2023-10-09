@@ -1,15 +1,18 @@
 import os
 import re
 import sqlite3
+import time
 from flask import Flask, session, redirect, url_for, render_template, request, abort
 from flask_session import Session
 from werkzeug.security import generate_password_hash, check_password_hash
 from helpers import login_required, create_table, get_register_template_error
 from tempfile import mkdtemp
 
-# 67 books
 
 app = Flask(__name__)
+max_chapters = None
+max_books = None
+print("starting...")
 
 # Verify table existance in SQL
 if not os.path.exists("./users.sqlite"):
@@ -48,7 +51,6 @@ def SQL_BLIVRE(query: str, *args):
 	return rows.fetchall()
 
 
-
 def padronize_text(text):
 	buffer_list = []
 	if text.__class__ != list:
@@ -57,20 +59,30 @@ def padronize_text(text):
 		return None
 	for i, dt in enumerate(text):
 		if dt.__class__ == tuple:
-			buffer_list.append({"text": dt[0]})
+			buffer_list.append({"index": i+1,"text": dt[0]})
 	return buffer_list
 
 
+def get_max_chapters(book_id: int):
+	rows = SQL_BLIVRE("SELECT MAX(chapter) FROM verses WHERE book = ?", book_id)[0][0]
+	return rows
+
+def load_max_books() -> None:
+	global max_books
+	max_books = SQL_BLIVRE("SELECT MAX(book) FROM verses")[0][0]
+load_max_books()
+
 @app.route("/", methods=["GET", "POST"])
 def index():
+	global max_chapters
 	if request.method == "GET":
 		if session.get("user_id"):
 
 			has_left = True
 			has_right = True
 			cache = SQL("SELECT cache FROM users WHERE id = ?", session["user_id"])[0][0]
-
-			if not cache or int(cache.split("-")[0]) <= 0 or int(cache.split("-")[1]) <= 0:
+			reset_cache = False
+			if reset_cache or not cache:
 				cache = '01-01' #chapter-book
 				SQL("UPDATE users SET cache = ? WHERE id = ?", cache, session["user_id"])
 			cache = cache.split("-")
@@ -85,6 +97,7 @@ def index():
 			return render_template("index.html", lines = data, info = info, has_right=has_right, has_left=has_left)
 		return render_template("index.html")
 	if request.method == "POST":
+		time.sleep(0.1)
 		if session.get("user_id"):
 			back_max = request.form.get("back-max")
 			back = request.form.get("back")
@@ -99,26 +112,36 @@ def index():
 			}
 			has_left = True
 			has_right = True
-			max_chapters = SQL_BLIVRE("SELECT MAX(chapter) FROM verses WHERE book = ?", metadata[1])[0][0]
+			if not max_chapters:
+				max_chapters = get_max_chapters(metadata[1])
 			if back:
 				info["chapter"] -= 1
 				if info["chapter"] <= 0:
-					info["chapter"] += 1
-					has_left = False
+					if info["book"] > 1:
+						info["book"] -= 1
+						max_chapters = get_max_chapters(info["book"])
+						info["chapter"] = max_chapters if max_chapters else 1
+					else:
+						info["chapter"] += 1
+						has_left = False
 				data = padronize_text(SQL_BLIVRE("SELECT text FROM verses WHERE chapter = ? AND book = ?", info["chapter"], info["book"]))
 				SQL("UPDATE users SET cache = ? WHERE id = ?", f"{info['chapter']}-{info['book']}", session["user_id"])
+				max_chapters = get_max_chapters(info["book"])
 			elif back_max:
 				info["chapter"] = 1
 				data = padronize_text(SQL_BLIVRE("SELECT text FROM verses WHERE chapter = ? AND book = ?", info["chapter"], info["book"]))
 				SQL("UPDATE users SET cache = ? WHERE id = ?", f"{info['chapter']}-{info['book']}", session["user_id"])
 			elif next:
 				info["chapter"] += 1
+				max_chapters = get_max_chapters(info["book"])
 				if info["chapter"] > max_chapters:
-					info["chapter"] -= 1
-					has_right = False
+					info["chapter"] = 1
+					info["book"] += 1
 				data = padronize_text(SQL_BLIVRE("SELECT text FROM verses WHERE chapter = ? AND book = ?", info["chapter"], info["book"]))
 				SQL("UPDATE users SET cache = ? WHERE id = ?", f"{info['chapter']}-{info['book']}", session["user_id"])
+				max_chapters = get_max_chapters(info["book"])
 			elif next_max:
+				max_chapters = get_max_chapters(info["book"])
 				info["chapter"] = max_chapters
 				data = padronize_text(SQL_BLIVRE("SELECT text FROM verses WHERE chapter = ? AND book = ?", info["chapter"], info["book"]))
 				SQL("UPDATE users SET cache = ? WHERE id = ?", f"{info['chapter']}-{info['book']}", session["user_id"])

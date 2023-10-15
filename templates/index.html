@@ -5,8 +5,6 @@
 	Index
 {% endblock %}
 
-
-
 {% block body %}
 	{% if session.user_id and lines and info %}
 		<span style="justify-content: center; font-family: Gill Sans; font-size: 25px;
@@ -19,7 +17,7 @@
 									 border-radius: 20px; text-align: justify; 
 									 margin-top: 15px; padding: 10px; 
 									 overflow-y: scroll;" autofocus>
-			<span style="font-family: Arial">
+			<span id="verses" style="font-family: Arial; font-size: {% if range_bar %}{{ range_bar }}{% else %}15{% endif %}px">
 				{% for line in lines %}				
 					<p>Verse {{ line.index }} > {{ line.text }}</p>
 				{% endfor %}
@@ -31,9 +29,15 @@
 			<input type="submit" class="btn btn-{% if not has_right %}danger{% else %}primary{% endif %}" name="next" value="▶" {% if not has_right %} disabled {% endif %}>
 			<input type="submit" class="btn btn-{% if not has_right %}danger{% else %}primary{% endif %}" name="next-max" value="▶▶" {% if not has_right %} disabled {% endif %}>
 			<input type="hidden" name="meta" value="{{ info.chapter }}-{{ info.book }}">
+			<input type="hidden" id="range-bar-meta" name="range-bar-meta" value="{% if range_bar %}{{ range_bar }}{% else %}15{% endif %}">
 		</form>
+		<form onchange="onChange()">
+			<input type="range" id="range-bar" max="70" value="{% if range_bar %}{{ range_bar }}{% else %}15{% endif %}" min="15">
+		  <span id="range-bar-value">{%if range_bar %}{{ range_bar }}{% else %}15{% endif %}</span>
+		</form>
+		<script src="../static/js/onChange.js"></script>
 	{% elif session.user_id %}
-		<h2>...</h2>
+		<h2>Unexpected Error<p>We're back as so early</p></h2>
 	{% else %}
 		<h2> You aren't logged </h2>
 	{% endif %}

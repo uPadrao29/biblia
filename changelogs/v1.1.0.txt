@@ -1,0 +1,9 @@
+###Changelog v1.1.0###
+
+# 1 - Added font size range bar control#
+# 2 - Small bugs fixed#
+
+
+##Future Updates##
+# 1 - Enhance the visual for users#
+# 2 - Added some features like change name, password, see another users#

@@ -20,10 +20,11 @@ if not os.path.exists("./users.sqlite"):
 
 @app.after_request
 def after_request(response):
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    response.headers["Expires"] = 0
-    response.headers["Pragma"] = "no-cache"
-    return response
+	response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+	response.headers["Expires"] = 0
+	response.headers["Pragma"] = "no-cache"
+	response.headers["SameSite"] = "Lax"
+	return response
 
 
 app.config["SESSION_FILE_DIR"] = mkdtemp()
@@ -104,6 +105,12 @@ def index():
 			next_max = request.form.get("next-max")
 			next = request.form.get("next")
 			metadata = request.form.get("meta").split("-")
+			try:
+				range_bar = int(request.form.get("range-bar-meta"))
+				if not range_bar: 
+					range_bar = 15
+			except Exception:
+				range_bar = 15
 			data = None
 			info = None
 			info = {
@@ -145,7 +152,7 @@ def index():
 				info["chapter"] = max_chapters
 				data = padronize_text(SQL_BLIVRE("SELECT text FROM verses WHERE chapter = ? AND book = ?", info["chapter"], info["book"]))
 				SQL("UPDATE users SET cache = ? WHERE id = ?", f"{info['chapter']}-{info['book']}", session["user_id"])
-			return render_template("index.html", lines = data, info = info, has_left = has_left, has_right = has_right)
+			return render_template("index.html", lines = data, info = info, has_left = has_left, has_right = has_right, range_bar = range_bar)
 		return render_template("index.html")
 	return abort(400)
 

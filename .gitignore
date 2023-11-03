@@ -8,3 +8,5 @@ query.sql
 output.txt
 raw.html
 test.py
+databases
+createenv.py

@@ -15,7 +15,7 @@ def login_required(f):
 
 def create_table():
 	try:
-		con = sqlite3.connect("users.sqlite")
+		con = sqlite3.connect("./databases/users.sqlite")
 		db = con.cursor()
 		db.execute("""
 CREATE TABLE IF NOT EXISTS users (
@@ -23,7 +23,9 @@ id INTEGER PRIMARY KEY AUTOINCREMENT,
 username TEXT NOT NULL, 
 hash TEXT NOT NULL, 
 cache TEXT NOT NULL DEFAULT '',
-account_creation DATE NOT NULL DEFAULT CURRENT_TIMESTAMP)
+language TEXT NOT NULL DEFAULT 'en'
+account_creation DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+)
 """)
 		con.commit()
 	except Exception as e:

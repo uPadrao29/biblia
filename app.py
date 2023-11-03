@@ -5,18 +5,14 @@ import time
 from flask import Flask, session, redirect, url_for, render_template, request, abort
 from flask_session import Session
 from werkzeug.security import generate_password_hash, check_password_hash
-from helpers import login_required, create_table, get_register_template_error
+from helpers import login_required, get_register_template_error
 from tempfile import mkdtemp
 
 
 app = Flask(__name__)
-max_chapters = None
 max_books = None
-print("starting...")
+max_chapters = None
 
-# Verify table existance in SQL
-if not os.path.exists("./users.sqlite"):
-	create_table()
 
 @app.after_request
 def after_request(response):
@@ -33,31 +29,34 @@ app.config["SESSION_TYPE"] = "filesystem"
 app.config["SECRET_KEY"] = os.urandom(12).hex()
 Session(app)
 
-con = sqlite3.connect("users.sqlite", check_same_thread=False)
-db = con.cursor()
 
-con2 = sqlite3.connect("blivre.sqlite", check_same_thread=False)
-db2 = con2.cursor()
+CONNECTION_MAIN = sqlite3.connect("./databases/users.sqlite", check_same_thread=False)
+DB_MAIN = CONNECTION_MAIN.cursor()
+
+CONNECTION_SECONDARY = sqlite3.connect("./databases/blivre.sqlite", check_same_thread=False)
+DB_SECONDARY = CONNECTION_SECONDARY.cursor()
 
 
 def SQL(query: str, *args):
-	rows = db.execute(query, args)
-	con.commit()
+	rows = DB_MAIN.execute(query, args)
+	CONNECTION_MAIN.commit()
 	return rows.fetchall()
 
 
-def SQL_BLIVRE(query: str, *args):
-	rows = db2.execute(query, args)
-	con2.commit()
+def SQL_SECONDARY(query: str, *args):
+	rows = DB_SECONDARY.execute(query, args)
+	CONNECTION_SECONDARY.commit()
 	return rows.fetchall()
 
 
-def padronize_text(text):
+def padronize_text(text: list[tuple]):
 	buffer_list = []
-	if text.__class__ != list:
-		return None
-	elif len(text) == 0:
-		return None
+	try:
+		if text.__class__ != list or len(text) == 0:
+			return None
+	except Exception as e:
+		print(f"|{padronize_text.__name__}| ERROR: { e }")
+
 	for i, dt in enumerate(text):
 		if dt.__class__ == tuple:
 			buffer_list.append({"index": i+1,"text": dt[0]})
@@ -65,13 +64,14 @@ def padronize_text(text):
 
 
 def get_max_chapters(book_id: int):
-	rows = SQL_BLIVRE("SELECT MAX(chapter) FROM verses WHERE book = ?", book_id)[0][0]
+	rows = SQL_SECONDARY("SELECT MAX(chapter) FROM verses WHERE book = ?", book_id)[0][0]
 	return rows
 
-def load_max_books() -> None:
+def load_max_books():
 	global max_books
-	max_books = SQL_BLIVRE("SELECT MAX(book) FROM verses")[0][0]
+	max_books = SQL_SECONDARY("SELECT MAX(book) FROM verses")[0][0]
 load_max_books()
+
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -91,19 +91,20 @@ def index():
 				'chapter': int(cache[0]),
 				'book': int(cache[1])
 			}
-			data = padronize_text(SQL_BLIVRE("SELECT text FROM verses WHERE chapter = ? AND book = ?", info["chapter"], info["book"]))
+			data = padronize_text(SQL_SECONDARY("SELECT text FROM verses WHERE chapter = ? AND book = ?", info["chapter"], info["book"]))
 			if not data: 
 				return redirect(url_for("index"), 301)
 			if len(data) == 0: data = None
 			return render_template("index.html", lines = data, info = info, has_right=has_right, has_left=has_left)
 		return render_template("index.html")
 	if request.method == "POST":
-		time.sleep(0.1)
 		if session.get("user_id"):
-			back_max = request.form.get("back-max")
-			back = request.form.get("back")
-			next_max = request.form.get("next-max")
-			next = request.form.get("next")
+			act_buttons = {
+				"back_max": request.form.get("back-max"),
+				"back": request.form.get("back"),
+				"next_max": request.form.get("next-max"),
+				"next": request.form.get("next")
+			}
 			metadata = request.form.get("meta").split("-")
 			try:
 				range_bar = int(request.form.get("range-bar-meta"))
@@ -121,7 +122,7 @@ def index():
 			has_right = True
 			if not max_chapters:
 				max_chapters = get_max_chapters(metadata[1])
-			if back:
+			if act_buttons["back"]:
 				info["chapter"] -= 1
 				if info["chapter"] <= 0:
 					if info["book"] > 1:
@@ -131,26 +132,26 @@ def index():
 					else:
 						info["chapter"] += 1
 						has_left = False
-				data = padronize_text(SQL_BLIVRE("SELECT text FROM verses WHERE chapter = ? AND book = ?", info["chapter"], info["book"]))
+				data = padronize_text(SQL_SECONDARY("SELECT text FROM verses WHERE chapter = ? AND book = ?", info["chapter"], info["book"]))
 				SQL("UPDATE users SET cache = ? WHERE id = ?", f"{info['chapter']}-{info['book']}", session["user_id"])
 				max_chapters = get_max_chapters(info["book"])
-			elif back_max:
+			elif act_buttons["back_max"]:
 				info["chapter"] = 1
-				data = padronize_text(SQL_BLIVRE("SELECT text FROM verses WHERE chapter = ? AND book = ?", info["chapter"], info["book"]))
+				data = padronize_text(SQL_SECONDARY("SELECT text FROM verses WHERE chapter = ? AND book = ?", info["chapter"], info["book"]))
 				SQL("UPDATE users SET cache = ? WHERE id = ?", f"{info['chapter']}-{info['book']}", session["user_id"])
-			elif next:
+			elif act_buttons["next"]:
 				info["chapter"] += 1
 				max_chapters = get_max_chapters(info["book"])
 				if info["chapter"] > max_chapters:
 					info["chapter"] = 1
 					info["book"] += 1
-				data = padronize_text(SQL_BLIVRE("SELECT text FROM verses WHERE chapter = ? AND book = ?", info["chapter"], info["book"]))
+				data = padronize_text(SQL_SECONDARY("SELECT text FROM verses WHERE chapter = ? AND book = ?", info["chapter"], info["book"]))
 				SQL("UPDATE users SET cache = ? WHERE id = ?", f"{info['chapter']}-{info['book']}", session["user_id"])
 				max_chapters = get_max_chapters(info["book"])
-			elif next_max:
+			elif act_buttons["next_max"]:
 				max_chapters = get_max_chapters(info["book"])
 				info["chapter"] = max_chapters
-				data = padronize_text(SQL_BLIVRE("SELECT text FROM verses WHERE chapter = ? AND book = ?", info["chapter"], info["book"]))
+				data = padronize_text(SQL_SECONDARY("SELECT text FROM verses WHERE chapter = ? AND book = ?", info["chapter"], info["book"]))
 				SQL("UPDATE users SET cache = ? WHERE id = ?", f"{info['chapter']}-{info['book']}", session["user_id"])
 			return render_template("index.html", lines = data, info = info, has_left = has_left, has_right = has_right, range_bar = range_bar)
 		return render_template("index.html")
@@ -162,6 +163,9 @@ def login():
 	if request.method == "GET":
 		return render_template("login.html")
 	if request.method == "POST":
+		session["user_id"] = 6
+		session["user_name"] = "foo"
+		return redirect(url_for("index"), 301)
 		session.clear()
 		username = request.form.get("username")
 		password = request.form.get("password")

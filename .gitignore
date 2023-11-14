@@ -8,5 +8,6 @@ query.sql
 output.txt
 raw.html
 test.py
-databases
+databases/*
+!databases/blivre.sqlite
 createenv.py
